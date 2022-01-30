@@ -1,9 +1,8 @@
 cnav 
 ====
-##a simple but powerful navigator implemented with curses
-<!-- ![](https://i.imgur.com/SPwZKJN.mp4) -->
+## a simple but powerful navigator implemented with curses
 
-<!-- ![](https://imgur.com/a/LeMHIjp.gif) -->
+	
 `cat example.json | cnav.py`
 ![](https://i.imgur.com/X9Imrhm.mp4)
 ![](https://i.imgur.com/6idnPhj.gif)
@@ -14,9 +13,7 @@ if the object to iterate is a list, it gets converted to a dict, which keys are 
 it is not ment to be implemented in a real project, more as a helper tool
 when scraping html content for example.
 
-##usage
-
-##features
+## features
 - provide a regex to narrow down the selection
 - select and return multiple objects
 - send code to the REPL and see the output 
@@ -29,14 +26,14 @@ it cannot	fully be used in a pipe chain.
 ## customisation
 - all keybindings can easily be overwritten, an action can be mapped to multiple keybindings
 
-##dependencies
+## dependencies
 - dependent on nls_util's curses wrapper, this class will later be implemented into this project
 
-##drawbacks and flaws
+## drawbacks and flaws
 at this point cnav uses verious systemcalls, which means its UNIX only,
 this is going to be fixed soon.
 
-##todos
+## todos
 - the get_key_history function probably throws an error, if the navigate method has not been called before
 - sort option for choices
 -! option to toggle endless search mode
