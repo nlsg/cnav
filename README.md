@@ -38,3 +38,4 @@ this is going to be fixed soon.
 - sort option for choices
 -! option to toggle endless search mode
 - optimised window redrawing(interessting framework https://github.com/jwlodek/py_cui)
+- keybinding to toggle line numbers

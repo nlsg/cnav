@@ -38,7 +38,7 @@ class CNav(cnav.Nav):
             ]))
         except IndexError:
           break
-      choice, info = self.get_choice(dir_content,dir_info)
+      choice, info = self.perform_navigation(dir_content,dir_info)
 
       choice  = choice[0].split("|")
       choice[-1] = choice[-1].replace(" ","")
@@ -69,19 +69,21 @@ class CNav(cnav.Nav):
       from os import system
 
       if info["key"] == 's':
+        cwd = go_dir_up(cwd)
         with self.c.detach(): system(f"cd {cwd} && bash")
 
       # evalute cmd
       if "cmd" in info:
+        cmd = info["cmd"]
         if "{}" in info["cmd"]:
-          cmd = info["cmd"].replace("{}",f"{cwd}")
+          cmd = cmd.replace("{}",f"{cwd}")
         with self.c.detach(): pop = popen(cmd).read()
-        choice1, info1 = self.get_choice(pop.split("\n"))
+        choice1, info1 = self.perform_navigation(pop.split("\n"))
       else:
         if choice[0][0] == 'd':
           self.log("","is dir")
         elif choice[0][0] == '-':
-          choice1, info1 = self.get_choice(["nvim - system","du - popen","cat - popen","tail- system"])
+          choice1, info1 = self.perform_navigation(["nvim - system","du - popen","cat - popen","tail- system"])
           if info1["key"] != 'q':
             choice1 = choice1[0].split("-")
             cmd = f"{choice1[0]} {cwd}"
@@ -89,7 +91,7 @@ class CNav(cnav.Nav):
               with self.c.detach(): system(cmd)
             if "popen" in choice1[1]:
               with self.c.detach(): pop = popen(cmd).read()
-              choice, info = self.get_choice(pop.split("\n"))
+              choice, info = self.perform_navigation(pop.split("\n"))
           self.log("","is file")
           cwd = go_dir_up(cwd)
         
