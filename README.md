@@ -1,8 +1,8 @@
 cnav 
 ====
 ##a simple but powerful navigator implemented with curses
-![txt](https://imgur.com/a/TNdE3Sq)
-![](https://imgur.com/a/LeMHIjp)
+![](https://i.imgur.com/a/TNdE3Sq.gif)
+![](https://imgur.com/a/LeMHIjp.gif)
 
 cnav can be used to interactively choose an item, or seek through
 iterable objects like lists dicts, and mixtures of it.
@@ -10,7 +10,6 @@ if the object to iterate is a list, it gets converted to a dict, which keys are 
 it is not ment to be implemented in a real project, more as a helper tool
 when scraping html content for example.
 
-alias c='LAST_PATH=$(pwd) && cd '
 ##usage
 
 ##features
