@@ -1,9 +1,10 @@
 cnav 
 ====
 ##a simple but powerful navigator implemented with curses
-![](https://i.imgur.com/SPwZKJN.mp4)
+<!-- ![](https://i.imgur.com/SPwZKJN.mp4) -->
 
-![](https://imgur.com/a/LeMHIjp.gif)
+<!-- ![](https://imgur.com/a/LeMHIjp.gif) -->
+`cat example.json | cnav.py`
 ![](https://i.imgur.com/6idnPhj.gif)
 
 cnav can be used to interactively choose an item, or seek through
