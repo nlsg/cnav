@@ -4,7 +4,7 @@ cnav
 
 	
 `cat example.json | cnav.py`
-![](https://imgur.com/5KAiEZ9)
+![](https://imgur.com/5KAiEZ9.gif)
 ![](https://i.imgur.com/6idnPhj.gif)
 
 cnav can be used to interactively choose an item, or seek through
