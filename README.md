@@ -5,6 +5,7 @@ cnav
 
 <!-- ![](https://imgur.com/a/LeMHIjp.gif) -->
 `cat example.json | cnav.py`
+![](https://i.imgur.com/X9Imrhm.mp4)
 ![](https://i.imgur.com/6idnPhj.gif)
 
 cnav can be used to interactively choose an item, or seek through
