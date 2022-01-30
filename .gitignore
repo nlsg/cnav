@@ -1,1 +1,4 @@
 push.ini
+.gitignore
+session.vim
+cnav.log
