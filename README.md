@@ -29,7 +29,7 @@ it cannot fully be used in a pipe chain.
 ## default keybindings 
 | keybinding     | action                                             |
 |----------------|----------------------------------------------------|
-| j, j, up, down | move up / down                                     |
+| j, h, up, down | move up / down                                     |
 | h, left        | go back                                            |
 | l, enter       | go further or return, if object is not iterable    |
 | g, G           | move to first / last object                        |
