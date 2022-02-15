@@ -21,13 +21,14 @@ It can also be utilised in a shell script
 - select and return multiple objects (default binding 'q')
 - send code to the REPL and see the output (useless feature, will be removed)
 
-- standalone cnav is capable of reading stdin, but since curses messes with stdout,
-it cannot	fully be used in a pipe chain.
+- standalone cnav is capable of reading stdin, but since curses messes with stdout, 
+it cannot fully be used in a pipe chain.
 - send a command which is handled by the recursion-hndl function
 - all functionality of cnav is implemented in just one class,
 
 ## default keybindings 
 | keybinding     | action                                             |
+|----------------|----------------------------------------------------|
 | j, j, up, down | move up / down                                     |
 | h, left        | go back                                            |
 | l, enter       | go further or return, if object is not iterable    |
@@ -50,9 +51,9 @@ if the endless search mode is active, you will stay in search mode after going f
 - all keybindings can easily be overwritten, an action can be mapped to multiple keybindings
 - options are stored in a dict called opts (e.g. Cnav().opts["print_type"])
 changing an option:
-`from cnav import Nav
+```from cnav import Nav
 nav = Nav()
-nav.opts["endless_search_mode"] = False`
+nav.opts["endless_search_mode"] = False```
 
 | option              | default                            |
 |---------------------|------------------------------------|
