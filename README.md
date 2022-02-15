@@ -49,6 +49,10 @@ if the endless search mode is active, you will stay in search mode after going f
 ## customisation
 - all keybindings can easily be overwritten, an action can be mapped to multiple keybindings
 - options are stored in a dict called opts (e.g. Cnav().opts["print_type"])
+changing an option:
+`from cnav import Nav
+nav = Nav()
+nav.opts["endless_search_mode"] = False`
 
 | option              | default                            |
 |---------------------|------------------------------------|
