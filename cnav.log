@@ -200,3 +200,17 @@ choice=0
 e=TypeError('ord() expected string of length 1, but NoneType found')
   user_key=None
 
+02-11 03:16:06 - user key is special char >
+e=TypeError('ord() expected string of length 1, but NoneType found')
+  self.user_key=None
+
+02-11 03:16:08 - get key error >
+e=NameError("name 'pc' is not defined")
+
+02-11 03:16:08 - user key is special char >
+e=TypeError('ord() expected string of length 1, but NoneType found')
+  self.user_key=None
+
+02-11 03:16:08 - info_w key_str error >
+{e=}
+

@@ -23,6 +23,7 @@ class Nav():
       ,"G"       :" -> go to bottom"
       ,"<C-t>"   :" -> toggle endless_search_mode"
       }
+    self.construct_right_window_f = self.construct_info_w
     self.n_rec = 1
     self.debug_mode = False
     self.visual_markpoint = 0
@@ -105,14 +106,47 @@ class Nav():
       if (t := type(self.choice[0])) != dict and t != list or self.info["key"] == 'q':
         return self.history[-1]
 
+  def construct_info_w(self, coords: set, preview):
+    x,y = coords
+    def str_splitter(str_, n): 
+      return [str_[i:i+n] for i in range(0, len(str_), n)]
+       
+    try:
+      user_key_ord = ord(self.user_key)
+    except TypeError as e:
+      user_key_ord = "-"
+      self.log(f"{e=}\n{self.user_key=}","user key is special char")
+    info_str  = f"{self.choice}/{len(self.choices)-1}|in: {self.user_key}/{user_key_ord}"
+    info_str += f"|r: {self.n_rec}|sm: {self.mode}|c: {self.choice}, o: {self.offset}"
+    line_str = ""
+    info_str = str_splitter(info_str,x-2)[0]
+    try:
+      key_str = f"<{self.keys[self.choice]}>"
+    except IndexError:
+      key_str = "<->"
+      self.log("{e=}","info_w key_str error")
+    for i in range(x-2):  line_str += "-"
+    
+    if len(preview) == 0:
+      preview_strs = str_splitter(str(self.choices[self.keys[self.choice]]).replace('\n', ' '),x-2)
+    else:
+      preview_strs = []
+      try:
+        for i in str(preview[self.choice]).split('\n'):
+          if len(i) > x-2:
+            preview_strs += str_splitter(i,x-2)
+          else:
+            preview_strs.append(i)
+      except IndexError:
+        preview_strs = str_splitter(str(self.choices[self.keys[self.choice]]).replace('\n', ' '),x-2)
+    return [key_str,info_str,line_str, *preview_strs]
+
   def perform_navigation(self, choices, preview:list=[]):
+    if preview == None: preview = []
     '''this method contains all functionality of cnav'''
     self.choices = choices
     c = self.c
 
-    def str_splitter(str_, n): 
-      return [str_[i:i+n] for i in range(0, len(str_), n)]
-       
     def ranger_help(help_dict, coords):
       help_w = c.popup("<help>", coords)
       c.render_win(help_w,[f"{k}\t{help_dict[k]}" for k in help_dict])
@@ -176,13 +210,13 @@ class Nav():
         ioff = i + self.offset
         print_str = ""
         if self.opts["print_type"]:
-          type_info = str(type(self.choices[keys[ioff]])).split("'")[1]
+          type_info = str(type(self.choices[self.keys[ioff]])).split("'")[1]
           print_str = f"({type_info}) "
         if self.opts["print_list_numbers"]:
-          if type(keys[self.choice]) == int:
-            print_str += "0" if int(keys[i]) < 10 else ""
-          print_str += f"{keys[ioff]} - "
-        print_str += str(self.choices[keys[ioff]]).rstrip()
+          if type(self.keys[self.choice]) == int:
+            print_str += "0" if int(self.keys[i]) < 10 else ""
+          print_str += f"{self.keys[ioff]} - "
+        print_str += str(self.choices[self.keys[ioff]]).rstrip()
         if len(print_str) > x-2:
           print_str = print_str[:x-5] + "..."
         # if self.choice == ioff:
@@ -193,37 +227,6 @@ class Nav():
         if i == y-3: break
       return main_strs
     
-    def construct_info_w():
-      try:
-        user_key_ord = ord(self.user_key)
-      except TypeError as e:
-        user_key_ord = "-"
-        self.log(f"{e=}\n{self.user_key=}","user key is special char")
-      info_str  = f"{self.choice}/{len(self.choices)-1}|in: {self.user_key}/{user_key_ord}"
-      info_str += f"|r: {self.n_rec}|sm: {self.mode}|c: {self.choice}, o: {self.offset}"
-      line_str = ""
-      info_str = str_splitter(info_str,x-2)[0]
-      try:
-        key_str = f"<{keys[self.choice]}>"
-      except IndexError:
-        key_str = "<->"
-        self.log("{e=}","info_w key_str error")
-      for i in range(x-2):  line_str += "-"
-      
-      if len(preview) == 0:
-        preview_strs = str_splitter(str(self.choices[keys[self.choice]]).replace('\n', ' '),x-2)
-      else:
-        preview_strs = []
-        try:
-          for i in str(preview[self.choice]).split('\n'):
-            if len(i) > x-2:
-              preview_strs += str_splitter(i,x-2)
-            else:
-              preview_strs.append(i)
-        except IndexError:
-          preview_strs = str_splitter(str(self.choices[keys[self.choice]]).replace('\n', ' '),x-2)
-      return [key_str,info_str,line_str, *preview_strs]
-
     can_scroll_up   = lambda:self.choice > 0
     can_scroll_down = lambda:self.choice < len(self.choices)-1 
     def scroll_up():
@@ -269,7 +272,19 @@ class Nav():
         self.choices = res_dir
       return self.choices
 
-    # handle mode independent keys
+    def cmd_handler(cmd):
+      if cmd == "numbers":
+        self.opts["print_list_numbers"] = not self.opts["print_list_numbers"]
+        notify(f"{self.opts['print_list_numbers']}")
+
+    def toggle_opt(opt_key, force_val=None):
+      if force_val != None:
+        self.opts[opt_key] = force_val
+      else: self.opts[opt_key] = not self.opts[opt_key]
+
+    def change_mode(mode):
+      self.mode = mode
+
     def handle_independent_keys():
       """
       20 -> Ctrl+T
@@ -280,44 +295,35 @@ class Nav():
         key_ord = ord(self.user_key)
       except TypeError:
         return False
-      if key_ord == 20:
-        self.opts["endless_search_mode"] = not self.opts["endless_search_mode"]
-      elif key_ord == 16:
-        scroll_up()
-      elif key_ord == 14:
-        if can_scroll_down(screen_fit):
-          scroll_down(screen_fit)
-      else: return False
+      if key_ord == 20:                           toggle_opt("endless_search_mode")
+      elif key_ord == 16:                         scroll_up()
+      elif key_ord == 14:                         scroll_down(screen_fit)
+      elif self.user_key == '#':                  toggle_opt("print_list_numbers")
+      else:                                       return False
       return True
 
     def handle_normal_keys():
-      if self.mode != "normal":
-        return False
-      if   self.user_key in ['k',"KEY_UP"]:
-        scroll_up()
-      elif self.user_key in ['j', "KEY_DOWN"]:
-          scroll_down(screen_fit)
-      elif self.user_key in ['K', "KEY_PPAGE"]:
-        scroll_page_up(screen_fit)
-      elif self.user_key in ['J', "KEY_NPAGE"]:
-        scroll_page_down(screen_fit)
-      elif self.user_key == 'g': self.choice = 0; self.offset = 0
-      elif self.user_key == 'G': self.choice = len(self.choices)-1; self.offset = self.choice-screen_fit
-      elif self.user_key == '?': ranger_help(self.info, (len(self.info)*2,c.max_x-8,4,4))
-      elif self.user_key == '/': self.mode = "search"
-      elif self.user_key == ':': self.mode = "command"
-      elif self.user_key == '>': self.mode = "repl"
-      elif self.user_key == 'v': self.mode = "visual"; self.visual_markpoint = self.choice
-      elif self.user_key in self.break_list: return "break"
-      else: return False
+      if self.mode != "normal":                   return False
+      if   self.user_key in ['k',"KEY_UP"]:       scroll_up()
+      elif self.user_key in ['j', "KEY_DOWN"]:    scroll_down(screen_fit)
+      elif self.user_key in ['K', "KEY_PPAGE"]:   scroll_page_up(screen_fit)
+      elif self.user_key in ['J', "KEY_NPAGE"]:   scroll_page_down(screen_fit)
+      elif self.user_key == 'g':                  self.choice = 0; self.offset = 0
+      elif self.user_key == 'G':                  self.choice = len(self.choices)-1; self.offset = self.choice-screen_fit
+      elif self.user_key == '?':                  ranger_help(self.info, (len(self.info)*2,c.max_x-8,4,4))
+      elif self.user_key == '/':                  self.mode = "search"
+      elif self.user_key == ':':                  self.mode = "command"
+      elif self.user_key == '>':                  self.mode = "repl"
+      elif self.user_key == 'v':                  self.mode = "visual"; self.visual_markpoint = self.choice
+      elif self.user_key in self.break_list:      return "break"
+      else:                                       return False
       return True
 
     def handle_search_keys():
       if self.mode != "search":
         return False
       self.user_key, self.user_line = handle_line_input(self.user_key, self.user_line)
-      if self.opts["lock_regex"] != None:
-        self.opts["lock_regex"] = self.user_line
+      if self.opts["lock_regex"] != None:         self.opts["lock_regex"] = self.user_line
       if self.user_key in ['\n', "KEY_RIGHT", "KEY_LEFT"]:
         if self.opts["endless_search_mode"]:
           self.user_line = ""
@@ -327,12 +333,9 @@ class Nav():
         else:
           self.user_line = self.user_line[:-1]
           self.mode = "normal"
-      elif self.user_key == "KEY_UP":
-        scroll_up()
-      elif self.user_key == "KEY_DOWN":
-        scroll_down(screen_fit)
-      else: #if not enter -> perform re.search
-        self.choices = filter_selection(choices_)
+      elif self.user_key == "KEY_UP":             scroll_up()
+      elif self.user_key == "KEY_DOWN":           scroll_down(screen_fit)
+      else:                                       self.choices = filter_selection(choices_)
       return True
 
     def handle_command_keys():
@@ -340,10 +343,11 @@ class Nav():
         return False
       self.user_key, self.user_line = handle_line_input(self.user_key, self.user_line)
       if self.user_key == '\n': #enter
-
         self.mode = "normal"
         self.info["cmd"] = self.user_line[:-1]
-        return "break"
+        cmd_handler(self.info["cmd"])
+        self.user_line = ""
+        return True
 
     def handle_visual_keys():
       if self.mode != "visual":
@@ -388,11 +392,12 @@ class Nav():
         handle_visual_keys,
         handle_repl_keys,
         ]
+
     while True:
       if type(self.choices) == list: 
-        keys = [i  for i in range(len(self.choices))]
+        self.keys = [i  for i in range(len(self.choices))]
       else:
-        keys = list(self.choices.keys())
+        self.keys = list(self.choices.keys())
 
       if self.choice > len(self.choices)-1:
         self.choice = self.offset = 0
@@ -401,11 +406,12 @@ class Nav():
       screen_fit = y-3
       c.render_win(c.main_w, construct_main_w(), self.info["main_w_title"])
       y,x = c.info_w.getmaxyx()
-      c.render_win(c.info_w, construct_info_w())
+      c.render_win(c.info_w, self.construct_right_window_f((x,y),preview))
 
       if self.user_key != None and skip_input_once == False:
         try:
           self.user_key = c.stdscr.getkey()
+          t0 = pc()
         except Exception as e:
           self.log(f"{e=}", "get key error")
       else:
@@ -425,15 +431,15 @@ class Nav():
         continue
       
     if self.user_key not in ["h","KEYLEFT"]:
-      self.key_history.append(keys[self.choice])
+      self.key_history.append(self.keys[self.choice])
 
     # return a selection
     if self.info["sr"][0] != self.info["sr"][1]:
       self.info["sr"][1] += 1
-      return [self.choices[keys[i]] for i in range(*self.info["sr"])], self.info
+      return [self.choices[self.keys[i]] for i in range(*self.info["sr"])], self.info
 
     # return an object
-    return [self.choices[keys[self.choice]],], self.info
+    return [self.choices[self.keys[self.choice]],], self.info
 
 def eval_input(in_):
   '''try to evaluete lines in input
@@ -480,7 +486,7 @@ def parse_args():
   parser.add_argument("-o", "--outfile", help="write output to a file")
   parser.add_argument("-p", "--pipe", action="store_true", help="piping workaround, writes to /tmp/cnav (e.g. cat x | cnav.py -p ; cat /tmp/cnav | grep ...)")
   parser.add_argument("-r", "--readable", action="store_true", help="puts newlines after comas(true by default, -r to disable)")
-  parser.add_argument("-j", "--json-format", default = "{[(),", help="put \\n after given chars")
+  parser.add_argument("-j", "--json-format", default = "{[(,", help="put \\n after given chars default \"{[(,\"")
   parser.add_argument("-f", "--format", help="dont use json output forma, TODO!")
   return vars(parser.parse_args())
 
@@ -493,6 +499,8 @@ def check_args(args=parse_args()):
   if args["pipe"] == True:
     opts["outfile"] = "/tmp/cnav"
   return opts
+
+nav = Nav().navigate
 
 if __name__ == "__main__":
   opts = check_args()
@@ -512,5 +520,3 @@ if __name__ == "__main__":
   with open(opts["outfile"],"w") as f:
     f.write(out)
     f.write("\n")
-
-      
