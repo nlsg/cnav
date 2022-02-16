@@ -29,9 +29,9 @@ it cannot fully be used in a pipe chain.
 ## default keybindings 
 | keybinding     | action                                             |
 |----------------|----------------------------------------------------|
-| j, h, up, down | move up / down                                     |
+| j, k, up, down | move up / down                                     |
 | h, left        | go back                                            |
-| l, enter       | go further or return, if object is not iterable    |
+| l, left, enter | go further or return, if object is not iterable    |
 | g, G           | move to first / last object                        |
 | q              | return highlighted object(s)                       |
 | v              | toggle to visual mode (to select multiple objects) |
@@ -51,9 +51,11 @@ if the endless search mode is active, you will stay in search mode after going f
 - all keybindings can easily be overwritten, an action can be mapped to multiple keybindings
 - options are stored in a dict called opts (e.g. Cnav().opts["print_type"])
 changing an option:
-```from cnav import Nav
+```
+from cnav import Nav
 nav = Nav()
-nav.opts["endless_search_mode"] = False```
+nav.opts["endless_search_mode"] = False
+```
 
 | option              | default                            |
 |---------------------|------------------------------------|
