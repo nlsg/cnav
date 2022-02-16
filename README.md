@@ -7,13 +7,13 @@ cnav
 ![](https://imgur.com/5KAiEZ9.gif)
 ![](https://i.imgur.com/6idnPhj.gif)
 
-cnav can be used to interactively choose and return one or multiple items from a json file,
+`cnav` can be used to interactively choose and return one or multiple items from a json file,
 or seek through iterable objects like lists dicts, and mixtures of it.
 If the object to iterate is a list, it gets converted to a dict, which keys are just numbers.
-cnav is not meant to be implemented in a real project, more as a helper tool
+`cnav` is not meant to be implemented in a real project, more as a helper tool
 when scraping html content for example.
 
-cnav can be used standalone, in a Python REPL session or be inherited in a python project.
+`cnav` can be used standalone, in a Python REPL session or be inherited in a python project.
 It can also be utilised in a shell script 
 
 ## features
@@ -21,21 +21,21 @@ It can also be utilised in a shell script
 - select and return multiple objects (default binding 'q')
 - send code to the REPL and see the output (useless feature, will be removed)
 
-- standalone cnav is capable of reading stdin, but since curses messes with stdout, 
+- standalone `cnav` is capable of reading stdin, but since curses messes with stdout, 
 it cannot fully be used in a pipe chain.
-- send a command which is handled by the recursion-hndl function
-- all functionality of cnav is implemented in just one class,
+- send a command which is handled by the recursion_hndl function
+- all functionality of `cnav` is implemented in just one class,
 
 ## default keybindings 
-| keybinding     | action                                             |
-|----------------|----------------------------------------------------|
-| j, k, up, down | move up / down                                     |
-| h, left        | go back                                            |
-| l, left, enter | go further or return, if object is not iterable    |
-| g, G           | move to first / last object                        |
-| q              | return highlighted object(s)                       |
-| v              | toggle to visual mode (to select multiple objects) |
-| /              | toggle search mode (it uses regex from re module)  |
+| keybinding      | action                                             |
+|-----------------|----------------------------------------------------|
+| j, k, up, down  | move up / down                                     |
+| h, left         | go back                                            |
+| l, right, enter | go further or return, if object is not iterable    |
+| g, G            | move to first / last object                        |
+| q               | return highlighted object(s)                       |
+| v               | toggle to visual mode (to select multiple objects) |
+| /               | toggle search mode (it uses regex from re module)  |
 
 ## modes 
 | mode          | explanation             |
