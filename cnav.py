@@ -1,11 +1,88 @@
 #!/usr/bin/python3
-from sys import path; path.insert(1, '/home/nls/py/pytools');
-import nls_util as nut
-notify = nut.notify
+from contextlib import contextmanager 
+
+class Curses_():
+  '''this class is a simple wrapper around the built in curses module'''
+  def __init__(self):
+    import curses 
+    self.curses = curses
+    self.stdscr = curses.initscr()
+    self.max_y, self.max_x = self.stdscr.getmaxyx()
+  def __enter__(self):
+    self.curses.noecho()
+    self.curses.cbreak()
+    self.stdscr.keypad(True)
+    self.curses.curs_set(0)
+  def popup(self, title_str=None, coords = ()):
+    '''returns a popup_window which is nicely placed on the stdscr''' 
+    def auto_centered_win():
+      return self.stdscr.subwin(self.max_y//2, self.max_x//2,self.max_y//4,self.max_x//4)
+    popup_w = None
+    if len(coords) < 4:
+      popup_w = auto_centered_win()
+    else: 
+      try:
+        popup_w = self.stdscr.subwin(*coords)
+      except:
+        popup_w = auto_centered_win()
+    popup_w.clear()
+    if title_str != None:   popup_w.addstr(0,1,title_str)
+    return popup_w
+  @contextmanager
+  def detach(self):
+    #detach curses for system operations()
+    self.__exit__(None,None,None)
+    yield None
+    self.__enter__()
+  @contextmanager
+  def render(self, wnd):
+    #simple clear -> do xy -> refresh contextmanager
+    wnd.clear()
+    try:
+      yield wnd
+    finally:
+      wnd.refresh()
+  def render_win(self, win,content_list,title="",y_start=1, getch=False):
+    '''
+    render a content_list to a curses window,
+    a content list can contain strings and/or
+    lists with arguments for the addstr function 
+    (e.g. "a str" or (x,y,"a str",CURSES_ATTRIBUTE))
+    the attribute is not necessary
+    '''
+    y,x = win.getmaxyx()
+    with self.render(win) as scr:
+      scr.box()
+      scr.addstr(0,1,title)
+      for s in content_list:
+        if type(s) == list:
+          if type(s[0]) == int:
+            try:
+              scr.addstr(*s)
+            except: 
+              pass
+            continue
+          else:
+            try:
+              scr.addstr(y_start,1, *s)
+            except:
+              pass
+        else:
+          scr.addstr(y_start,1, s)
+        if y_start+2 == y: break
+        y_start += 1
+  def __exit__(self, type, value, traceback):
+    self.curses.nocbreak()
+    self.stdscr.keypad(False)
+    self.curses.echo()
+    self.curses.curs_set(1)
+    self.curses.endwin()
+  
+
 class Nav():
   def __init__(self):
     # ui/ux related
-    self.c = nut.Curses()
+    self.c = Curses_()
     self.opts = {
        "print_list_numbers":True
       ,"print_type":True
@@ -42,7 +119,7 @@ class Nav():
       log_str += log_data.replace("\n", "\n  ") + "\n\n"
       with (f := open(f"{self.logfile}", "a")):
         f.write(log_str)
-      notify(f"log", "log written!")
+      # notify(f"log", "log written!")
 
   def get_key_history(self):
     '''this method is useful to get the history of dict-keys after the navigate method gets called'''
@@ -275,7 +352,6 @@ class Nav():
     def cmd_handler(cmd):
       if cmd == "numbers":
         self.opts["print_list_numbers"] = not self.opts["print_list_numbers"]
-        notify(f"{self.opts['print_list_numbers']}")
 
     def toggle_opt(opt_key, force_val=None):
       if force_val != None:
@@ -480,6 +556,9 @@ def reattach_tty():
   dup2(tty.fileno(), 0)
   return tty
 
+# function to make importing more convenient
+nav = Nav().navigate
+
 def parse_args():
   from argparse import ArgumentParser
   parser = ArgumentParser()
@@ -487,22 +566,16 @@ def parse_args():
   parser.add_argument("-p", "--pipe", action="store_true", help="piping workaround, writes to /tmp/cnav (e.g. cat x | cnav.py -p ; cat /tmp/cnav | grep ...)")
   parser.add_argument("-r", "--readable", action="store_true", help="puts newlines after comas(true by default, -r to disable)")
   parser.add_argument("-j", "--json-format", default = "{[(,", help="put \\n after given chars default \"{[(,\"")
-  parser.add_argument("-f", "--format", help="dont use json output forma, TODO!")
+  parser.add_argument("-f", "--format", help="dont use json output format, TODO!")
   return vars(parser.parse_args())
 
 def check_args(args=parse_args()):
-  opts = {}
-  opts.update(args)
-  opts["outfile"] = "/dev/stdout"
-  if args["outfile"] != None:
-    opts[file] = args["outfile"]
+  args["outfile"] = "/dev/stdout"
   if args["pipe"] == True:
-    opts["outfile"] = "/tmp/cnav"
-  return opts
+    args["outfile"] = "/tmp/cnav"
+  return args
 
-nav = Nav().navigate
-
-if __name__ == "__main__":
+def main():
   opts = check_args()
   obj = stdin_to_list()
   tty = reattach_tty()
@@ -520,3 +593,5 @@ if __name__ == "__main__":
   with open(opts["outfile"],"w") as f:
     f.write(out)
     f.write("\n")
+
+if __name__ == "__main__": main()
