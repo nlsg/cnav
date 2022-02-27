@@ -36,6 +36,8 @@ it cannot fully be used in a pipe chain.
 | q               | return highlighted object(s)                       |
 | v               | toggle to visual mode (to select multiple objects) |
 | /               | toggle search mode (it uses regex from re module)  |
+| Ctrl + T        | toggle endless_search_mode                         |
+| #               | toggle print_line_numbers|
 
 ## modes 
 | mode          | explanation             |
@@ -69,7 +71,7 @@ nav.opts["endless_search_mode"] = False
 
 
 ## dependencies
-- dependent on nls_util's curses wrapper, this class will later be implemented into this project
+- curses 
 
 ## drawbacks and flaws
 at this point cnav uses various system calls, which means its UNIX only,
@@ -79,7 +81,6 @@ this is going to be fixed soon.
 - the get_key_history function probably throws an error, if the navigate method has not been called before
 - sort option for choices
 - option to toggle endless search mode
-- port custom curses class to cnav
 - optimised window redrawing(interessting framework https://github.com/jwlodek/py_cui)
 - keybinding to toggle line numbers
 - make it possible to iterate further when multiple objects are selected 

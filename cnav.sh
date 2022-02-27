@@ -6,8 +6,10 @@ PATH=$PATH:~/py/cnav
     | sort -rg \
     | sed '/^0/d' \
     | awk '{print "["$0}' \
-    | cnav.py 
-cat tmp | cnav.py
+    | cnav.py -p \
+		&& less /tmp/cnav
+
+sensors | cnav.py
 
 #!/usr/bin/python
 # from os import popen 

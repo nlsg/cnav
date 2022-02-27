@@ -38,7 +38,7 @@ class CNav(cnav.Nav):
             ]))
         except IndexError:
           break
-      choice, info = self.perform_navigation(dir_content,dir_info)
+      choice = self.perform_navigation(dir_content,dir_info)
 
       choice  = choice[0].split("|")
       choice[-1] = choice[-1].replace(" ","")
@@ -56,10 +56,10 @@ class CNav(cnav.Nav):
         return cwd
 
       # mutate cwd
-      if info["key"] in ['h',"KEY_LEFT"] or next_dir == "..":
+      if self.info["key"] in ['h',"KEY_LEFT"] or next_dir == "..":
         cwd = go_dir_up(cwd)
         continue
-      elif info["key"] == '~':
+      elif self.info["key"] == '~':
         cwd = popen("echo $HOME").read()[:-1]
         continue
       elif next_dir != ".":
@@ -68,36 +68,36 @@ class CNav(cnav.Nav):
 
       from os import system
 
-      if info["key"] == 's':
+      if self.info["key"] == 's':
         cwd = go_dir_up(cwd)
         with self.c.detach(): system(f"cd {cwd} && bash")
 
       # evalute cmd
-      if "cmd" in info:
-        cmd = info["cmd"]
-        if "{}" in info["cmd"]:
+      if "cmd" in self.info:
+        cmd = self.info["cmd"]
+        if "{}" in self.info["cmd"]:
           cmd = cmd.replace("{}",f"{cwd}")
         with self.c.detach(): pop = popen(cmd).read()
-        choice1, info1 = self.perform_navigation(pop.split("\n"))
+        choice1 = self.perform_navigation(pop.split("\n"))
       else:
         if choice[0][0] == 'd':
           self.log("","is dir")
         elif choice[0][0] == '-':
-          choice1, info1 = self.perform_navigation(["nvim - system","du - popen","cat - popen","tail- system"])
-          if info1["key"] != 'q':
+          choice1 = self.perform_navigation(["nvim - system","du - popen","cat - popen","tail- system"])
+          if self.info["key"] != 'q':
             choice1 = choice1[0].split("-")
             cmd = f"{choice1[0]} {cwd}"
             if "system" in choice1[1]:
               with self.c.detach(): system(cmd)
             if "popen" in choice1[1]:
               with self.c.detach(): pop = popen(cmd).read()
-              choice, info = self.perform_navigation(pop.split("\n"))
+              choice = self.perform_navigation(pop.split("\n"))
           self.log("","is file")
           cwd = go_dir_up(cwd)
         
       cwd = cwd.replace("//","/")
 
-      if (t := type(choice)) != dict and t != list or info["key"] == 'q':
+      if (t := type(choice)) != dict and t != list or self.info["key"] == 'q':
         return choice
 
 from os import popen

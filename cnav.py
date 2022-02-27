@@ -87,7 +87,7 @@ class Nav():
        "print_list_numbers":True
       ,"print_type":True
       ,"endless_search_mode":True
-      ,"lock_regex":None # lock regex not working yet!
+      ,"lock_regex":False # lock regex not working yet!
       ,"horizontal_split":False
       ,"main_w_title":"<cnav>"
       ,"hilight_attr":self.c.curses.A_REVERSE
@@ -96,8 +96,7 @@ class Nav():
        "j, k"    :" -> Down, Up"
       ,"J, K"    :" -> PgDn, PgUp"
       ,"q"       :" -> quit and return selected item"
-      ,"g"       :" -> go to top"
-      ,"G"       :" -> go to bottom"
+      ,"g, G"       :" -> go to top, bottom"
       ,"<C-t>"   :" -> toggle endless_search_mode"
       }
     self.construct_right_window_f = self.construct_info_w
@@ -168,7 +167,7 @@ class Nav():
     commands and recursive calling of the perform_navigation method'''
     self.history.append(iterable)
     while True:
-      self.choice, self.info = self.perform_navigation(self.history[-1])
+      self.choice = self.perform_navigation(self.history[-1])
       if self.info["key"] == 'h' and len(self.history) > 1:
         self.history.pop()
         self.n_rec -= 1
@@ -205,7 +204,12 @@ class Nav():
     for i in range(x-2):  line_str += "-"
     
     if len(preview) == 0:
-      preview_strs = str_splitter(str(self.choices[self.keys[self.choice]]).replace('\n', ' '),x-2)
+      try:
+        preview_strs = str_splitter(str(self.choices[self.keys[self.choice]]).replace('\n', ' '),x-2)
+      except IndexError:
+        preview_strs = []
+        from sys import path; path.insert(1, '/home/nls/py/pytools'); import nls_util as nut
+        nut.notify(f"{self.n_rec}\n{self.choices=}\n{self.keys=}")
     else:
       preview_strs = []
       try:
@@ -215,7 +219,7 @@ class Nav():
           else:
             preview_strs.append(i)
       except IndexError:
-        preview_strs = str_splitter(str(self.choices[self.keys[self.choice]]).replace('\n', ' '),x-2)
+          preview_strs = str_splitter(str(self.choices[self.keys[self.choice]]).replace('\n', ' '),x-2)
     return [key_str,info_str,line_str, *preview_strs]
 
   def perform_navigation(self, choices, preview:list=[]):
@@ -257,9 +261,8 @@ class Nav():
     self.offset = 0
     skip_input_once = False
     self.user_key = None 
-    # lock_regex is either None or holds the user_line value of the last iteration
-    if self.opts["lock_regex"] != None:
-      self.user_line = self.opts["lock_regex"]
+    if self.opts["lock_regex"] and self.mode == "search":
+      pass
     else:
       self.user_line = ""
 
@@ -275,8 +278,17 @@ class Nav():
 
       if self.mode == "normal":
         main_strs.append([y-1,1,f"({self.len_resdir})"])
-      if (self.mode == "search" or self.user_line != "") and self.mode != "command":
-        main_strs.append([y-1,1,f"({self.len_resdir})/{self.user_line} >",c.curses.A_BOLD if self.mode == "search" else c.curses.A_NORMAL])
+      if self.mode == "search" or self.user_line != "":
+        sign = "["
+        if self.opts["endless_search_mode"]:
+          sign += "e"
+        if self.opts["lock_regex"]:
+          sign += "l"
+        if sign == "[":
+          sign = "/"
+        else:
+          sign += "]/"
+        main_strs.append([y-1,1,f"({self.len_resdir}){sign}{self.user_line} >",c.curses.A_BOLD if self.mode == "search" else c.curses.A_NORMAL])
       elif self.mode == "command": 
         main_strs.append([y-1,1,f"($):{self.user_line} >",c.curses.A_BOLD])
       if self.mode == "repl": 
@@ -297,6 +309,10 @@ class Nav():
         if len(print_str) > x-2:
           print_str = print_str[:x-5] + "..."
         # if self.choice == ioff:
+        if self.choice == ioff:
+          print_str = ">" + print_str[:-1]
+        else:
+          print_str = " " + print_str[:-1]
         if selected_range[0] <= ioff <= selected_range[1]:
           main_strs.append([print_str, self.opts["hilight_attr"]])
         else:
@@ -358,24 +374,28 @@ class Nav():
         self.opts[opt_key] = force_val
       else: self.opts[opt_key] = not self.opts[opt_key]
 
-    def change_mode(mode):
-      self.mode = mode
-
+    '''these keyhandlers should return true, if a key is handles'''
     def handle_independent_keys():
       """
-      20 -> Ctrl+T
-      16 -> Ctrl+P
+      20 -> Ctrl+t
+      5  -> Ctrl+e
+      16 -> Ctrl+p
       14 -> Ctrl+N
       """
       try:
         key_ord = ord(self.user_key)
       except TypeError:
         return False
-      if key_ord == 20:                           toggle_opt("endless_search_mode")
-      elif key_ord == 16:                         scroll_up()
-      elif key_ord == 14:                         scroll_down(screen_fit)
-      elif self.user_key == '#':                  toggle_opt("print_list_numbers")
-      else:                                       return False
+      if key_ord == 20 and self.mode == "search":
+        toggle_opt("endless_search_mode")
+      elif key_ord == 5 and self.mode == "search":
+        toggle_opt("lock_regex")
+      elif key_ord == 16:
+        scroll_up()
+      elif key_ord == 14:
+        scroll_down(screen_fit)
+      else:
+        return False
       return True
 
     def handle_normal_keys():
@@ -391,6 +411,7 @@ class Nav():
       elif self.user_key == ':':                  self.mode = "command"
       elif self.user_key == '>':                  self.mode = "repl"
       elif self.user_key == 'v':                  self.mode = "visual"; self.visual_markpoint = self.choice
+      elif self.user_key == '#':                  toggle_opt("print_list_numbers")
       elif self.user_key in self.break_list:      return "break"
       else:                                       return False
       return True
@@ -399,7 +420,6 @@ class Nav():
       if self.mode != "search":
         return False
       self.user_key, self.user_line = handle_line_input(self.user_key, self.user_line)
-      if self.opts["lock_regex"] != None:         self.opts["lock_regex"] = self.user_line
       if self.user_key in ['\n', "KEY_RIGHT", "KEY_LEFT"]:
         if self.opts["endless_search_mode"]:
           self.user_line = ""
@@ -452,7 +472,7 @@ class Nav():
         self.mode = "normal"
         try:
           evaled = eval(self.user_line[:-1])
-          choice1, info1 = self.perform_navigation(str(evaled).split("\n"))
+          choice1 = self.perform_navigation(str(evaled).split("\n"))
         except Exception as e:
           self.debug_mode = True
           self.log(f"{e=}\n{self.user_line=}","raised exception while eval")
@@ -498,8 +518,7 @@ class Nav():
         self.user_key = 'k'
         continue
       for hnd in handlers:
-        ctrl_flow = hnd()
-        if ctrl_flow != False:
+        if (ctrl_flow := hnd()) != False:
           break
       if ctrl_flow == "break":
         break
@@ -515,7 +534,7 @@ class Nav():
       return [self.choices[self.keys[i]] for i in range(*self.info["sr"])], self.info
 
     # return an object
-    return [self.choices[self.keys[self.choice]],], self.info
+    return [self.choices[self.keys[self.choice]],]
 
 def eval_input(in_):
   '''try to evaluete lines in input
@@ -582,6 +601,10 @@ def main():
   nav = Nav()
   nav.opts["endless_search_mode"] = True
   res = nav.navigate(obj)
+  if type(res) != str:
+    res = res[0]
+  else:
+    res = [res,]
   if opts["json_format"] != "":
     out = res
     for j_ in str(opts["json_format"]):
