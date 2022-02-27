@@ -36,8 +36,9 @@ it cannot fully be used in a pipe chain.
 | q               | return highlighted object(s)                       |
 | v               | toggle to visual mode (to select multiple objects) |
 | /               | toggle search mode (it uses regex from re module)  |
-| Ctrl + T        | toggle endless_search_mode                         |
-| #               | toggle print_line_numbers|
+| Ctrl + t        | toggle endless_search_mode                         |
+| Ctrl + c        | exit application                                   |
+| #               | toggle print_line_numbers                          |
 
 ## modes 
 | mode          | explanation             |
@@ -78,9 +79,8 @@ at this point cnav uses various system calls, which means its UNIX only,
 this is going to be fixed soon.
 
 ## todos
+- make if posssible to select multiple selections with spaces in between
 - the get_key_history function probably throws an error, if the navigate method has not been called before
 - sort option for choices
-- option to toggle endless search mode
 - optimised window redrawing(interessting framework https://github.com/jwlodek/py_cui)
-- keybinding to toggle line numbers
 - make it possible to iterate further when multiple objects are selected 

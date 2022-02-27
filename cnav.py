@@ -78,6 +78,9 @@ class Curses_():
     self.curses.curs_set(1)
     self.curses.endwin()
   
+class Utils():
+  def str_splitter(sellf, str_, n): 
+    return [str_[i:i+n] for i in range(0, len(str_), n)]
 
 class Nav():
   def __init__(self):
@@ -135,30 +138,36 @@ class Nav():
     '''this method is the hart and main entry point of cnav,
     it initalies the curses object 
     and wraps around recursion-hndl-function'''
-    c = self.c
-    self.c.__enter__()
+    try:
+      c = self.c
+      self.c.__enter__()
+      if self.opts["horizontal_split"]:
+        main_w_coords = ((c.max_y-2)//2,c.max_x-4,1,2)
+        info_w_coords = ((c.max_y-2)//2,c.max_x-4,(c.max_y//2),2)
+      else:
+        main_w_coords = (c.max_y-2,(c.max_x-4)//2,1,2)
+        info_w_coords = (c.max_y-2,(c.max_x-4)//2,1,(c.max_x//2))
+      c.main_w = c.popup(title_str=self.opts["main_w_title"], coords=main_w_coords)
+      c.info_w = c.popup(title_str="<info>",   coords=info_w_coords)
 
-    if self.opts["horizontal_split"]:
-      main_w_coords = ((c.max_y-2)//2,c.max_x-4,1,2)
-      info_w_coords = ((c.max_y-2)//2,c.max_x-4,(c.max_y//2),2)
-    else:
-      main_w_coords = (c.max_y-2,(c.max_x-4)//2,1,2)
-      info_w_coords = (c.max_y-2,(c.max_x-4)//2,1,(c.max_x//2))
-    c.main_w = c.popup(title_str=self.opts["main_w_title"], coords=main_w_coords)
-    c.info_w = c.popup(title_str="<info>",   coords=info_w_coords)
+      self.history = []
+      self.key_history = []
+      t = type(iterable)
+      if t == dict:
+        result = self.hnd_pointer(iterable)
+      elif t == list:
+        list_to_dict = {i : iterable[i] for i in range(len(iterable))}
+        result = self.hnd_pointer(list_to_dict)
+      elif t == str or t == int or t == bool:
+        print("can't iterate anymore")
+      self.c.__exit__(None,None,None)
+      if type(result) != tuple:
+        result = ([result, ],)
+      return result
+    except KeyboardInterrupt:
+      self.c.__exit__(None,None,None)
+      exit(1)
 
-    self.history = []
-    self.key_history = []
-    t = type(iterable)
-    if t == dict:
-      result = self.hnd_pointer(iterable)
-    elif t == list:
-      list_to_dict = {i : iterable[i] for i in range(len(iterable))}
-      result = self.hnd_pointer(list_to_dict)
-    elif t == str or t == int or t == bool:
-      print("can't iterate anymore")
-    self.c.__exit__(None,None,None)
-    return result
 
   def recursion_hndl(self, iterable):
     '''this is the default recursion-hndl, if you overwrite this method,
@@ -184,8 +193,6 @@ class Nav():
 
   def construct_info_w(self, coords: set, preview):
     x,y = coords
-    def str_splitter(str_, n): 
-      return [str_[i:i+n] for i in range(0, len(str_), n)]
        
     try:
       user_key_ord = ord(self.user_key)
@@ -195,7 +202,7 @@ class Nav():
     info_str  = f"{self.choice}/{len(self.choices)-1}|in: {self.user_key}/{user_key_ord}"
     info_str += f"|r: {self.n_rec}|sm: {self.mode}|c: {self.choice}, o: {self.offset}"
     line_str = ""
-    info_str = str_splitter(info_str,x-2)[0]
+    info_str = Utils().str_splitter(info_str,x-2)[0]
     try:
       key_str = f"<{self.keys[self.choice]}>"
     except IndexError:
@@ -205,21 +212,19 @@ class Nav():
     
     if len(preview) == 0:
       try:
-        preview_strs = str_splitter(str(self.choices[self.keys[self.choice]]).replace('\n', ' '),x-2)
+        preview_strs = Utils().str_splitter(str(self.choices[self.keys[self.choice]]).replace('\n', ' '),x-2)
       except IndexError:
         preview_strs = []
-        from sys import path; path.insert(1, '/home/nls/py/pytools'); import nls_util as nut
-        nut.notify(f"{self.n_rec}\n{self.choices=}\n{self.keys=}")
     else:
       preview_strs = []
       try:
         for i in str(preview[self.choice]).split('\n'):
           if len(i) > x-2:
-            preview_strs += str_splitter(i,x-2)
+            preview_strs += Utils().str_splitter(i,x-2)
           else:
             preview_strs.append(i)
       except IndexError:
-          preview_strs = str_splitter(str(self.choices[self.keys[self.choice]]).replace('\n', ' '),x-2)
+          preview_strs = Utils().str_splitter(str(self.choices[self.keys[self.choice]]).replace('\n', ' '),x-2)
     return [key_str,info_str,line_str, *preview_strs]
 
   def perform_navigation(self, choices, preview:list=[]):
@@ -306,13 +311,15 @@ class Nav():
             print_str += "0" if int(self.keys[i]) < 10 else ""
           print_str += f"{self.keys[ioff]} - "
         print_str += str(self.choices[self.keys[ioff]]).rstrip()
-        if len(print_str) > x-2:
-          print_str = print_str[:x-5] + "..."
-        # if self.choice == ioff:
+
         if self.choice == ioff:
-          print_str = ">" + print_str[:-1]
+          print_str = ">" + print_str
         else:
-          print_str = " " + print_str[:-1]
+          print_str = " " + print_str
+        print_str = Utils().str_splitter(print_str,x-2)[0]
+        if len(print_str) == x-2:
+          print_str = print_str[:x-5] + "..."
+
         if selected_range[0] <= ioff <= selected_range[1]:
           main_strs.append([print_str, self.opts["hilight_attr"]])
         else:
@@ -480,7 +487,7 @@ class Nav():
         return True
       return True
 
-    handlers = [
+    self.handlers = [
         handle_independent_keys,
         handle_normal_keys,
         handle_search_keys,
@@ -517,7 +524,7 @@ class Nav():
       if self.user_key == None:
         self.user_key = 'k'
         continue
-      for hnd in handlers:
+      for hnd in self.handlers:
         if (ctrl_flow := hnd()) != False:
           break
       if ctrl_flow == "break":
